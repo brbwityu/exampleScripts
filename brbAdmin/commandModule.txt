@@ -1,0 +1,542 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+
+local commandFunctions = {}
+
+local adminModule = require(script.Parent:WaitForChild("adminModule"))
+
+commandFunctions.commandList = {
+	"cmds", "tp", "bring", "to", "kill", "topoint", "explode", "smite", "stat", "speed", "jump", "ff", "unff", "fly", "fire", "unfire", "re", "sword",
+	"clear", "importgunframework", "jail", "unjail", "btools", "kick", "ban", "unban",
+}
+
+local function findPlayer(stringPartition, sender)
+	local foundPlayer = nil
+	local success, err = pcall(function()
+		if stringPartition then
+			stringPartition = string.lower(stringPartition)
+		end
+		
+		if stringPartition and stringPartition ~= "me" then
+			for i,v in pairs(players:GetChildren()) do
+				if string.find(string.lower(v.Name), stringPartition) then
+					foundPlayer = v
+				end
+			end
+		else
+			foundPlayer = sender
+		end
+	end)
+	if err then warn(err) end
+	
+	return foundPlayer
+end
+
+commandFunctions.cmds = function(sender)
+	local success, err = pcall(function()
+		if sender.PlayerGui:FindFirstChild("brbAdminGui") then
+			local frame = sender.PlayerGui:FindFirstChild("brbAdminGui"):WaitForChild("Frame")
+			if frame then
+				if frame:FindFirstChild("openGui") then
+					frame.openGui:FireClient(sender)
+				end
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.topoint = function(sender)
+
+end
+
+commandFunctions.bring = function(sender, recipientTag)
+	local success, err = pcall(function()
+		local recipient = findPlayer(recipientTag, sender)
+		if recipient == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.bring(sender, v.Name)
+			end
+		end
+		if recipient and recipient.Character then
+			if sender.Character then
+				local humanoidRootPart1 = recipient.Character:FindFirstChild("HumanoidRootPart")
+				local humanoidRootPart2 = sender.Character:FindFirstChild("HumanoidRootPart")
+				humanoidRootPart1.CFrame = humanoidRootPart2.CFrame
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.to = function(sender, recipientTag)
+	local success, err = pcall(function()
+		local recipient = findPlayer(recipientTag, sender)
+
+		if recipient and recipient.Character then
+			if sender.Character then
+				local humanoidRootPart2 = recipient.Character:FindFirstChild("HumanoidRootPart")
+				local humanoidRootPart1 = sender.Character:FindFirstChild("HumanoidRootPart")
+				humanoidRootPart1.CFrame = humanoidRootPart2.CFrame
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.tp = function(sender, player1Tag, player2Tag)
+	local player1 = findPlayer(player1Tag, sender)
+	local player2 = findPlayer(player2Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "tp" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.tp(sender, v.Name, player2Tag)
+			end
+		end
+		if player1 and player1.Character then
+			if player2 and player2.Character then
+				local humanoidRootPart1 = player1.Character:FindFirstChild("HumanoidRootPart")
+				local humanoidRootPart2 = player2.Character:FindFirstChild("HumanoidRootPart")
+				humanoidRootPart1.CFrame = humanoidRootPart2.CFrame
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.kill = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.kill(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			player1.Character:BreakJoints()
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.explode = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.explode(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local explosion = Instance.new("Explosion")
+			explosion.Position = player1.Character.HumanoidRootPart.Position
+			explosion.Parent = player1.Character
+			local sound = Instance.new("Sound", player1.Character.HumanoidRootPart)
+			sound.SoundId = "rbxassetid://165969964"
+			sound.RollOffMode = Enum.RollOffMode.Linear
+			sound:Play()
+			delay(sound.TimeLength, function() explosion:Destroy() sound:Destroy() end)
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.smite = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.smite(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local part = Instance.new("Part", game.Workspace)
+			part.Anchored = true
+			part.Material = Enum.Material.Neon
+			part.BrickColor = BrickColor.new("Institutional white")
+			part.CanCollide = false
+			part.Size = Vector3.new(3, 1000, 3)
+			part.Position = player1.Character.HumanoidRootPart.Position
+			player1.Character:BreakJoints()
+			local sound = Instance.new("Sound", part)
+			sound.SoundId = "rbxassetid://1079408535"
+			sound:Play()
+			delay(1.5, function() part.Transparency = 1 end)
+			delay(sound.TimeLength, function() part:Destroy() end)
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.stat = function(sender, recipient, stat, amount)
+	local player1 = findPlayer(recipient, sender)
+
+	local success, err = pcall(function()
+		if recipient == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.stat(sender, v.Name, stat, amount)
+			end
+		end
+		if player1 then
+			if player1:FindFirstChild("leaderstats") then
+				if player1.leaderstats:FindFirstChild(stat) then
+					player1.leaderstats[stat].Value += amount
+				else
+					--return no stat
+				end
+			else
+				-- return no leaderstats
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.speed = function(sender, player1Tag, amount)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.speed(sender, v.Name, amount)
+			end
+		end
+		if player1 and player1.Character then
+			if player1.Character:FindFirstChild("Humanoid") then
+				player1.Character.Humanoid.WalkSpeed = amount
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.jump = function(sender, player1Tag, amount)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.jump(sender, v.Name, amount)
+			end
+		end
+		if player1 and player1.Character then
+			if player1.Character:FindFirstChild("Humanoid") then
+				player1.Character.Humanoid.JumpPower = amount
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.ff = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.ff(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local forceField = Instance.new("ForceField")
+			forceField.Parent = player1.Character
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.unff = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.unff(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			for i,v in pairs(player1.Character:GetChildren()) do
+				if v:IsA("ForceField") then
+					v:Destroy()
+				end
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.fly = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.fly(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local insertService = game:GetService("InsertService")
+			local flyScript = insertService:LoadAsset(11602045846)
+
+			local character = player1.Character
+
+			flyScript.Parent = character
+			flyScript.flyScript.Enabled = true
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.fire = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.fire(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local fire = Instance.new("Fire")
+			fire.Parent = player1.Character.HumanoidRootPart
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.unfire = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.unfire(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			for i,v in pairs(player1.Character:GetChildren()) do
+				if v:IsA("Fire") then
+					v:Destroy()
+				end
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.re = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.re(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local coords
+			if player1.Character and player1.Character:FindFirstChild("HumanoidRootPart") then
+				coords = player1.Character:FindFirstChild("HumanoidRootPart").CFrame
+			end
+			player1:LoadCharacter()
+			
+			if coords then
+				player1.Character.HumanoidRootPart.CFrame = coords
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.sword = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.sword(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local insertService = game:GetService("InsertService")
+			local swordModel = insertService:LoadAsset(47433)
+
+			for i,v in pairs(swordModel:GetChildren()) do
+				v.Parent = player1.Backpack
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.clear = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.clear(sender, v.Name)
+			end
+		end
+		if player1 then
+			if player1.Character:FindFirstChild("Humanoid") then
+				player1.Character.Humanoid:UnequipTools()
+			end
+			player1.Backpack:ClearAllChildren()
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.importgunframework = function(sender)
+	local success, err = pcall(function()
+		if game:GetService("ReplicatedStorage"):FindFirstChild("storage_rs") then
+		else
+			print("loaded gun framework")
+			local insertService = game:GetService("InsertService")
+			local framework = insertService:LoadAsset(11602720093)
+
+			for i,v in pairs(framework:GetChildren()) do
+				if v:IsA("Folder") then
+					v.Parent = game.ReplicatedStorage
+				end
+				if v:IsA("Tool") then
+					v.Parent = game.StarterPack
+				end
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.jail = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.jail(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			local insertService = game:GetService("InsertService")
+			local cellModel = insertService:LoadAsset(11602900559)
+
+			for i,v in pairs(cellModel:GetChildren()) do
+				v.Parent = player1.Character
+				v.roof.CFrame = CFrame.new(player1.Character.HumanoidRootPart.Position - Vector3.new(0, 2.5, 0))
+				v.roof.Anchored = true
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.unjail = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.unjail(sender, v.Name)
+			end
+		end
+		if player1 and player1.Character then
+			for i,v in pairs(player1.Character:GetChildren()) do
+				if v.Name == "Cell" then
+					v:Destroy()
+				end
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.btools = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.btools(sender, v.Name)
+			end
+		end
+		
+		if not game:GetService("ServerScriptService"):FindFirstChild("ClassicBuildTools") then
+			local insertService = game:GetService("InsertService")
+			local scriptModel = insertService:LoadAsset(11603000948)
+
+			for i,v in pairs(scriptModel:GetChildren()) do
+				v.Parent = game:GetService("ServerScriptService")
+			end
+		end
+		
+		if player1 and player1.Character then
+			local insertService = game:GetService("InsertService")
+			local btools = insertService:LoadAsset(11602999146)
+
+			for i,v in pairs(btools:GetChildren()) do
+				v.Parent = player1.Backpack
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.kick = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if player1Tag == "all" then
+			for i,v in pairs(game.Players:GetChildren()) do
+				commandFunctions.kick(sender, v.Name)
+			end
+		end
+		if table.find(adminModule.authorityLevel2, player1.UserId) and table.find(adminModule.authorityLevel1, sender.UserId) then
+		elseif table.find(adminModule.authorityLevel2, player1.UserId) and table.find(adminModule.authorityLevel2, sender.UserId) then
+		else
+			if player1 then
+				player1:Kick()
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.ban = function(sender, player1Tag)
+	local player1 = findPlayer(player1Tag, sender)
+
+	local success, err = pcall(function()
+		if table.find(adminModule.authorityLevel2, player1.UserId) and table.find(adminModule.authorityLevel1, sender.UserId) then
+		elseif table.find(adminModule.authorityLevel2, player1.UserId) and table.find(adminModule.authorityLevel2, sender.UserId) then
+		else
+			if player1 then
+				local dataStoreService = game:GetService("DataStoreService")
+				local bannedIndividuals = dataStoreService:GetDataStore("brbAdmin_bannedIndividuals")
+				local bTable = {["banned"] = true}
+				bannedIndividuals:SetAsync(player1.UserId, bTable)
+				player1:Kick()
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+commandFunctions.unban = function(sender, userId)
+	local success, err = pcall(function()
+		if userId then
+			local dataStoreService = game:GetService("DataStoreService")
+			local bannedIndividuals = dataStoreService:GetDataStore("brbAdmin_bannedIndividuals")
+			local bTable = {["banned"] = false}
+			bannedIndividuals:SetAsync(userId, bTable)
+		end
+	end)
+	if err then warn(err) end
+end
+
+return commandFunctions

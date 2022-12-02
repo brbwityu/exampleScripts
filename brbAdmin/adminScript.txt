@@ -1,0 +1,57 @@
+-- Scripted by brbwityu
+
+local module = require(script:WaitForChild("adminModule"))
+local commandFunctions = require(script:WaitForChild("commandModule"))
+
+local players = game:GetService("Players")
+local dataStoreService = game:GetService("DataStoreService")
+local owners = module.authorityLevel2
+local admins = module.authorityLevel1
+local prefix = module.prefix
+
+local bannedIndividuals = dataStoreService:GetDataStore("brbAdmin_bannedIndividuals")
+
+local commandList = commandFunctions.commandList
+
+players.PlayerAdded:connect(function(player)
+	local findAdmin = table.find(admins, player.UserId)
+	local findOwner = table.find(owners, player.UserId)
+	
+	if findAdmin or findOwner then
+		local gui = script:WaitForChild("brbAdminGui"):Clone()
+		gui.Parent = player.PlayerGui
+	end
+	
+	local bTable = bannedIndividuals:GetAsync(player.UserId)
+	if bTable ~= nil then
+		if bTable["banned"] == true then
+			player:Kick()
+		end
+	end
+	
+	player.Chatted:connect(function(message, recipient)
+		message = string.lower(message)
+		
+		local findAdmin = table.find(admins, player.UserId)
+		local findOwner = table.find(owners, player.UserId)
+		
+		if findAdmin or findOwner then
+			local mSplit = string.split(message, " ")
+			local command = string.split(mSplit[1], prefix)
+			
+			local commandFound = table.find(commandList, command[2])
+			
+			if commandFound then
+				commandFunctions[command[2]](player, mSplit[2], mSplit[3], mSplit[4])
+			end
+		end
+		
+	end)
+end)
+
+for i,v in pairs(module.defaultBanTable) do
+	if bannedIndividuals:GetAsync(v) == nil then
+		local bTable = {["banned"] = true}
+		bannedIndividuals:SetAsync(v, bTable)
+	end
+end

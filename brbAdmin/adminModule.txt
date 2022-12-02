@@ -1,0 +1,13 @@
+local module = {}
+
+local owners = {55420538} -- brbwityu
+local admins = {}
+local defaultBanTable = {} -- Add userIDs here if you want people banned by default.
+local prefix = ";"
+
+module.authorityLevel2 = owners
+module.authorityLevel1 = admins
+module.defaultBanTable = defaultBanTable
+module.prefix = prefix
+
+return module
