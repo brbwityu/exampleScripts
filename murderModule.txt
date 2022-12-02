@@ -1,0 +1,306 @@
+-- Scripted by brbwityu
+
+local module = {}
+
+local serverScriptService = game:GetService("ServerScriptService")
+local players = game:GetService("Players")
+local dataStoreService = game:GetService("DataStoreService")
+local marketplaceService = game:GetService("MarketplaceService")
+local serverStorage = game:GetService("ServerStorage")
+
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local storage_rs = replicatedStorage:WaitForChild('storage_rs')
+local remotes = storage_rs:WaitForChild('Remotes')
+local getEquippedWeapon = remotes:WaitForChild('getEquippedWeaponAsset')
+
+module.defaultItemModule = {
+	knives = {
+		['Default'] = {Grade = "Default", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9771139938", Owned = true, Offsale = true, Name = "Default", Type = "knives"},
+		['Splitter'] = {Grade = "Classic", ["Price"] = 25, ["Asset"] = "http://www.roblox.com/asset/?id=9771140520", Owned = false, Offsale = false, Name = "Splitter", Type = "knives"},
+		['Ghost'] = {Grade = "Classic", ["Price"] = 125, ["Asset"] = "http://www.roblox.com/asset/?id=9771141023", Owned = false, Offsale = false, Name = "Ghost", Type = "knives"},
+		['Prince'] = {Grade = "Classic", ["Price"] = 175, ["Asset"] = "http://www.roblox.com/asset/?id=9771142367", Owned = false, Offsale = false, Name = "Prince", Type = "knives"},
+		['Blood'] = {Grade = "Classic", ["Price"] = 200, ["Asset"] = "http://www.roblox.com/asset/?id=9771143114", Owned = false, Offsale = false, Name = "Blood", Type = "knives"},
+		['Shadow'] = {Grade = "Classic", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9771142713", Owned = false, Offsale = false, Name = "Shadow", Type = "knives"},
+		['Clockwork'] = {Grade = "Legendary", ["Price"] = 1250, ["Asset"] = "http://www.roblox.com/asset/?id=9771148474", Owned = false, Offsale = false, Name = "Clockwork", Type = "knives"},
+		['Heat'] = {Grade = "Legendary", ["Price"] = 1250, ["Asset"] = "http://www.roblox.com/asset/?id=9837958118", Owned = false, Offsale = false, Name = "Heat", Type = "knives"},
+		['Cold Flame'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9837958652", Owned = false, Offsale = true, Name = "Cold Flame", Type = "knives"},
+		['America'] = {Grade = "Special", ["Price"] = 500, ["Asset"] = "http://www.roblox.com/asset/?id=9833254756", Owned = false, Offsale = true, Name = "America", Type = "knives"},
+	},
+	
+	guns = {
+		['Default'] = {Grade = "Default", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9771246650", Owned = true, Offsale = true, Name = "Default", Type = "guns"},
+		['Phaser'] = {Grade = "Classic", ["Price"] = 100, ["Asset"] = "http://www.roblox.com/asset/?id=9833261977", Owned = false, Offsale = false, Name = "Phaser", Type = "guns"},
+		['Golden'] = {Grade = "Classic", ["Price"] = 150, ["Asset"] = "http://www.roblox.com/asset/?id=9833260705", Owned = false, Offsale = false, Name = "Golden", Type = "guns"},
+		['Laser'] = {Grade = "Classic", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9833264113", Owned = false, Offsale = false, Name = "Laser", Type = "guns"},
+		["Blood Luger"] = {Grade = "Legendary", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9832973041", Owned = false, Offsale = false, Name = "Blood Luger", Type = "guns"},
+		['Paper Airplane'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9775733263", Owned = false, Offsale = true, Name = "Paper Airplane", Type = "guns"},
+		['Terraria'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9838872686", Owned = false, Offsale = true, Name = "Terraria", Type = "guns"},
+		['America'] = {Grade = "Special", ["Price"] = 500, ["Asset"] = "http://www.roblox.com/asset/?id=9833258850", Owned = false, Offsale = true, Name = "America", Type = "guns"},
+		
+	},
+}
+
+local defaultStatTable = {level = 1, balance = 0, exp = 0, equippedKnife = "Default", equippedGun = "Default", murdererKills = 0, sheriffWins = 0, innocentWins = 0,}
+local defaultSpecialStats = {officeWins = 0, terrariaWins = 0, scarecrowKills = 0, heatKills = 0, italyWins = 0, ["redeemedCodes"] = {}}
+
+local defaultTable = {["items"] = {
+	knives = {
+		['Default'] = {Grade = "Default", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9771139938", Owned = true, Offsale = true, Name = "Default", Type = "knives"},
+		['Splitter'] = {Grade = "Classic", ["Price"] = 25, ["Asset"] = "http://www.roblox.com/asset/?id=9771140520", Owned = false, Offsale = false, Name = "Splitter", Type = "knives"},
+		['Ghost'] = {Grade = "Classic", ["Price"] = 125, ["Asset"] = "http://www.roblox.com/asset/?id=9771141023", Owned = false, Offsale = false, Name = "Ghost", Type = "knives"},
+		['Prince'] = {Grade = "Classic", ["Price"] = 175, ["Asset"] = "http://www.roblox.com/asset/?id=9771142367", Owned = false, Offsale = false, Name = "Prince", Type = "knives"},
+		['Blood'] = {Grade = "Classic", ["Price"] = 200, ["Asset"] = "http://www.roblox.com/asset/?id=9771143114", Owned = false, Offsale = false, Name = "Blood", Type = "knives"},
+		['Shadow'] = {Grade = "Classic", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9771142713", Owned = false, Offsale = false, Name = "Shadow", Type = "knives"},
+		['Clockwork'] = {Grade = "Legendary", ["Price"] = 1250, ["Asset"] = "http://www.roblox.com/asset/?id=9771148474", Owned = false, Offsale = false, Name = "Clockwork", Type = "knives"},
+		['Heat'] = {Grade = "Legendary", ["Price"] = 1250, ["Asset"] = "http://www.roblox.com/asset/?id=9837958118", Owned = false, Offsale = false, Name = "Heat", Type = "knives"},
+		['Cold Flame'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9837958652", Owned = false, Offsale = true, Name = "Cold Flame", Type = "knives"},
+		['America'] = {Grade = "Special", ["Price"] = 500, ["Asset"] = "http://www.roblox.com/asset/?id=9833254756", Owned = false, Offsale = true, Name = "America", Type = "knives"},
+	},
+
+	guns = {
+		['Default'] = {Grade = "Default", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9771246650", Owned = true, Offsale = true, Name = "Default", Type = "guns"},
+		['Phaser'] = {Grade = "Classic", ["Price"] = 100, ["Asset"] = "http://www.roblox.com/asset/?id=9833261977", Owned = false, Offsale = false, Name = "Phaser", Type = "guns"},
+		['Golden'] = {Grade = "Classic", ["Price"] = 150, ["Asset"] = "http://www.roblox.com/asset/?id=9833260705", Owned = false, Offsale = false, Name = "Golden", Type = "guns"},
+		['Laser'] = {Grade = "Classic", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9833264113", Owned = false, Offsale = false, Name = "Laser", Type = "guns"},
+		["Blood Luger"] = {Grade = "Legendary", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9832973041", Owned = false, Offsale = false, Name = "Blood Luger", Type = "guns"},
+		['Paper Airplane'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9775733263", Owned = false, Offsale = true, Name = "Paper Airplane", Type = "guns"},
+		['Terraria'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9838872686", Owned = false, Offsale = true, Name = "Terraria", Type = "guns"},
+		['America'] = {Grade = "Special", ["Price"] = 500, ["Asset"] = "http://www.roblox.com/asset/?id=9833258850", Owned = false, Offsale = true, Name = "America", Type = "guns"},
+
+	},
+},
+["mainStats"] = {level = 1, balance = 0, exp = 0, equippedKnife = "Default", equippedGun = "Default", murdererKills = 0, sheriffWins = 0, innocentWins = 0,},
+["specialStats"] = {officeWins = 0, terrariaWins = 0, scarecrowKills = 0, heatKills = 0, italyWins = 0, ["redeemedCodes"] = {}},
+}
+
+-- dataStoreCall
+local leaderstore = dataStoreService:GetDataStore("2_RMM_dataStore")
+
+_G.sessionData = {playerData = {storeData = {}}}
+
+getEquippedWeapon.OnServerInvoke = function(a, b, c)
+	local result
+	if c == "knife" then
+		result = module.defaultItemModule.knives[_G.sessionData.playerData.storeData[b.UserId.."-allData"]["mainStats"]["equippedKnife"]]["Asset"]
+	else
+		result = module.defaultItemModule.guns[_G.sessionData.playerData.storeData[b.UserId.."-allData"]["mainStats"]["equippedGun"]]["Asset"]
+	end
+	return result
+end
+
+local function checkData(player, a, b, c)
+	local success, err = pcall(function()
+		if a == nil then
+			local newTable = {["items"] = {
+				knives = {
+					['Default'] = {Grade = "Default", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9771139938", Owned = true, Offsale = true, Name = "Default", Type = "knives"},
+					['Splitter'] = {Grade = "Classic", ["Price"] = 25, ["Asset"] = "http://www.roblox.com/asset/?id=9771140520", Owned = false, Offsale = false, Name = "Splitter", Type = "knives"},
+					['Ghost'] = {Grade = "Classic", ["Price"] = 125, ["Asset"] = "http://www.roblox.com/asset/?id=9771141023", Owned = false, Offsale = false, Name = "Ghost", Type = "knives"},
+					['Prince'] = {Grade = "Classic", ["Price"] = 175, ["Asset"] = "http://www.roblox.com/asset/?id=9771142367", Owned = false, Offsale = false, Name = "Prince", Type = "knives"},
+					['Blood'] = {Grade = "Classic", ["Price"] = 200, ["Asset"] = "http://www.roblox.com/asset/?id=9771143114", Owned = false, Offsale = false, Name = "Blood", Type = "knives"},
+					['Shadow'] = {Grade = "Classic", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9771142713", Owned = false, Offsale = false, Name = "Shadow", Type = "knives"},
+					['Clockwork'] = {Grade = "Legendary", ["Price"] = 1250, ["Asset"] = "http://www.roblox.com/asset/?id=9771148474", Owned = false, Offsale = false, Name = "Clockwork", Type = "knives"},
+					['Heat'] = {Grade = "Legendary", ["Price"] = 1250, ["Asset"] = "http://www.roblox.com/asset/?id=9837958118", Owned = false, Offsale = false, Name = "Heat", Type = "knives"},
+					['Cold Flame'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9837958652", Owned = false, Offsale = true, Name = "Cold Flame", Type = "knives"},
+					['America'] = {Grade = "Special", ["Price"] = 500, ["Asset"] = "http://www.roblox.com/asset/?id=9833254756", Owned = false, Offsale = true, Name = "America", Type = "knives"},
+				},
+
+				guns = {
+					['Default'] = {Grade = "Default", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9771246650", Owned = true, Offsale = true, Name = "Default", Type = "guns"},
+					['Phaser'] = {Grade = "Classic", ["Price"] = 100, ["Asset"] = "http://www.roblox.com/asset/?id=9833261977", Owned = false, Offsale = false, Name = "Phaser", Type = "guns"},
+					['Golden'] = {Grade = "Classic", ["Price"] = 150, ["Asset"] = "http://www.roblox.com/asset/?id=9833260705", Owned = false, Offsale = false, Name = "Golden", Type = "guns"},
+					['Laser'] = {Grade = "Classic", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9833264113", Owned = false, Offsale = false, Name = "Laser", Type = "guns"},
+					["Blood Luger"] = {Grade = "Legendary", ["Price"] = 250, ["Asset"] = "http://www.roblox.com/asset/?id=9832973041", Owned = false, Offsale = false, Name = "Blood Luger", Type = "guns"},
+					['Paper Airplane'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9775733263", Owned = false, Offsale = true, Name = "Paper Airplane", Type = "guns"},
+					['Terraria'] = {Grade = "Special", ["Price"] = 0, ["Asset"] = "http://www.roblox.com/asset/?id=9838872686", Owned = false, Offsale = true, Name = "Terraria", Type = "guns"},
+					['America'] = {Grade = "Special", ["Price"] = 500, ["Asset"] = "http://www.roblox.com/asset/?id=9833258850", Owned = false, Offsale = true, Name = "America", Type = "guns"},
+
+				},
+			},
+			["mainStats"] = {level = 1, balance = 0, exp = 0, equippedKnife = "Default", equippedGun = "Default", murdererKills = 0, sheriffWins = 0, innocentWins = 0,},
+			["specialStats"] = {officeWins = 0, terrariaWins = 0, scarecrowKills = 0, heatKills = 0, italyWins = 0, ["redeemedCodes"] = {}},
+			}
+			
+			_G.sessionData.playerData.storeData[player.UserId.."-allData"] = newTable
+		else
+			_G.sessionData.playerData.storeData[player.UserId.."-allData"] = a
+		end
+	end)
+	if err then warn(err) end
+end
+
+local function createLeaderboard(player)
+	local success, err = pcall(function()
+		delay(2, function()
+			local leaderstatFolder = Instance.new("Folder", player)
+			leaderstatFolder.Name = "leaderstats"
+			local levelValue = Instance.new("IntValue", leaderstatFolder)
+			levelValue.Name = "Level"
+			levelValue.Value = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"]
+			
+			local playerstats = Instance.new("Folder", player)
+			playerstats.Name = "stats"
+			local balance = Instance.new("IntValue", playerstats)
+			balance.Name = "balance"
+			balance.Value = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"]
+			
+			local dataLoad = require(player:WaitForChild("PlayerGui"):WaitForChild("mainGui"):WaitForChild("dataLoad"))
+			local shopLoad = require(player:WaitForChild("PlayerGui"):WaitForChild("mainGui"):WaitForChild("shopLoad"))
+			
+			player:WaitForChild("PlayerGui"):WaitForChild("mainGui"):WaitForChild("statFrame"):WaitForChild("statScript").Enabled = true
+			dataLoad.loadData()
+			shopLoad.loadShop()
+		end)
+	end)
+	if err then warn(err) end
+end
+
+module.equipWeapon = function(player, weapon, weaponType)
+	local equipSuccess = false
+	local success, err = pcall(function()
+		if weaponType == "knives" then
+			if _G.sessionData.playerData.storeData[player.UserId.."-allData"]["items"][weaponType][weapon].Owned == true then
+				_G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["equippedKnife"] = weapon
+				equipSuccess = true
+			end
+		else
+			if _G.sessionData.playerData.storeData[player.UserId.."-allData"]["items"][weaponType][weapon].Owned == true then
+				_G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["equippedGun"] = weapon
+				equipSuccess = true
+			end
+		end
+	end)
+	return equipSuccess
+end
+
+module.returnEquippedWeapon = function(player, weaponType)
+	local equipped = "Default"
+	local success, err = pcall(function()
+		if weaponType == "knives" then
+			equipped = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["equippedKnife"]
+		else
+			equipped = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["equippedGun"]
+		end
+	end)
+	return equipped
+end
+
+module.buyItem = function(player, itemTag, itemType)
+	local id = false
+	local success, err = pcall(function()
+		local call = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["items"][itemType][itemTag]
+		
+		if call.Owned == false and call.Offsale == false then
+			if _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"] >= call.Price then
+				_G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"] = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"] - call.Price
+				call.Owned = true
+				player.stats.balance.Value = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"]
+				id = true
+			end
+		end
+	end)
+	if err then warn(err) end
+	return id
+end
+
+module.levelPlayers = function(vTable)
+	local success, err = pcall(function()
+		for i,player in pairs(vTable) do	
+			while _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["exp"] >= _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"]*110 do
+				if _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"] >= 999 then
+					break
+				else
+					_G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["exp"] = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["exp"] - _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"]*110
+					_G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"] = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"] + 1
+					player.leaderstats.Level.Value = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["level"]
+					wait(0.05)
+				end
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+module.SaveData = function(player, b)
+	local success, err = pcall(function()
+		if not b then
+			if _G.sessionData.playerData.storeData[player.UserId.."-allData"] then
+				leaderstore:SetAsync(player.UserId.."-allData", _G.sessionData.playerData.storeData[player.UserId.."-allData"])
+				print("Saved data")
+			end
+		end
+	end)
+	if err then warn(err) end
+end
+
+players.PlayerAdded:connect(function(player)
+	local success, err = pcall(function()
+		local storeData = leaderstore:GetAsync(player.UserId.."-allData")
+		
+		player.CameraMaxZoomDistance = 15
+		
+		checkData(player, storeData)
+		createLeaderboard(player)
+	end)
+	if err then warn(err) end
+end)
+
+players.PlayerRemoving:connect(function(player)
+	local found = table.find(_G.sessionData.concurrentplayers, player)
+	if found and found ~= nil then
+		table.remove(_G.sessionData.concurrentplayers, found)
+	end
+	
+	local success, err = pcall(function()
+		module.SaveData(player)
+	end)
+	if err then warn(err) end
+end)
+
+
+local idValues = {[1266921442] = 50, [1266921498] = 100, [1266921527] = 200, [1266921600] = 520, [1266921663] = 2200}
+
+
+local function processPurchase(player, id)
+	local successid = false
+	
+	local success, err = pcall(function()
+		if player then
+			_G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"] = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"] + idValues[id]
+			player.stats.balance.Value = _G.sessionData.playerData.storeData[player.UserId.."-allData"]["mainStats"]["balance"]
+			successid = true
+		end
+	end)
+	if err then warn(err) end
+	
+	return successid
+end
+
+
+
+
+local function processReceipt(receiptInfo)
+	local player = players:GetPlayerByUserId(receiptInfo.PlayerId)
+	local purchaseId = receiptInfo.PurchaseId
+	local productId = receiptInfo.ProductId
+	
+	if not player then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	
+	if player then
+		local process = processPurchase(player, productId)
+		local id = Enum.ProductPurchaseDecision.NotProcessedYet
+		
+		if process then
+			id = Enum.ProductPurchaseDecision.PurchaseGranted
+		end
+		return id
+	end
+	
+	module.SaveData(player)
+end
+
+marketplaceService.ProcessReceipt = processReceipt
+
+return module
