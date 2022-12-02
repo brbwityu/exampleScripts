@@ -1,0 +1,348 @@
+local players = game:GetService("Players")
+local userInputService = game:GetService("UserInputService")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local debris = game:GetService("Debris")
+local debrisField = workspace:WaitForChild("storage_ws"):WaitForChild("debrisField")
+local dataStoreModule = require(game:GetService("ServerScriptService"):WaitForChild("serverModules"):WaitForChild("dataStoreModule"))
+local tool = script.Parent
+
+local player
+local character
+local humanoid
+local rightArm
+local humanoidRootPart
+
+local cooldownFolder
+
+local fmf = script:WaitForChild("fireMagicFunction")
+
+local storage_rs = replicatedStorage:WaitForChild("storage_rs")
+local debrisFolder = storage_rs:WaitForChild("debris")
+
+local relative_ws = workspace:WaitForChild("storage_ws"):WaitForChild("workspace_Values"):WaitForChild("workspace_gRvalue")
+local relative_rs = replicatedStorage:WaitForChild("storage_rs"):WaitForChild("serverTime")
+
+local mCircle
+local fireball = debrisFolder:WaitForChild("fireball")
+local firepillar = debrisFolder:WaitForChild("firepillar")
+
+local animFolder = tool:WaitForChild("Animations")
+local sounds = tool:WaitForChild("Sounds")
+
+local animations = {["Fire Ball"] = animFolder:WaitForChild("fireball"),}
+
+local equipped = false
+
+local magicLevel
+
+local hitGui = script:WaitForChild("hitGui")
+
+local currentField = {}
+
+tool.Equipped:connect(function()
+	equipped = true
+	character = tool.Parent
+	player = players:GetPlayerFromCharacter(character)
+	humanoid = character:WaitForChild("Humanoid")
+	rightArm = character:WaitForChild("Right Arm")
+	humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+	mCircle = character:WaitForChild("magicCircle")
+	cooldownFolder = player:WaitForChild("cooldownFolder")
+end)
+
+local function burnEffect(humanoid, duration, damage)
+	repeat
+		humanoid:TakeDamage(damage)
+		local hrp = humanoid.Parent:FindFirstChild("HumanoidRootPart")
+		
+		local clone2 = sounds:WaitForChild("singeSound"):Clone()
+		clone2.Parent = hrp
+		clone2:Play()
+		
+		local clone = hitGui:Clone()
+
+		local x = math.random(1, 5)
+		local y = math.random(1, 5)
+		local z = math.random(1, 5)
+		clone.Enabled = true
+		clone.TextLabel.Text = tostring(damage)
+		clone.TextLabel.TextColor3 = Color3.fromRGB(255, 85, 0)
+		clone.StudsOffset = Vector3.new(x, y, z)
+		clone.Parent = hrp
+		delay(5, function() clone:Destroy() end)
+		
+		task.wait(1)
+		duration -= 1
+	until duration <= 0
+end
+
+local function playerCheck(part, attack, damage, bdamage)
+	local pCharacter
+	local pHumanoid
+	if part.Parent:FindFirstChild("Humanoid") then
+		pCharacter = part.Parent
+		pHumanoid = pCharacter:FindFirstChild("Humanoid")
+	end
+	if pHumanoid then
+		local hrp = pCharacter:FindFirstChild("HumanoidRootPart")
+		
+		
+		if table.find(currentField[tonumber(attack)], pCharacter) then
+			if tonumber(attack) >= 200001 and tonumber(attack) <= 400000 then
+				if tick() - currentField[tonumber(attack)][3] > 1 then
+					currentField[tonumber(attack)][3] = tick()
+					
+					local clone = hitGui:Clone()
+
+					local x = math.random(1, 5)
+					local y = math.random(1, 5)
+					local z = math.random(1, 5)
+					clone.Enabled = true
+					clone.TextLabel.Text = tostring(damage)
+					clone.StudsOffset = Vector3.new(x, y, z)
+					clone.Parent = hrp
+					delay(2, function() clone:Destroy() end)
+					burnEffect(pHumanoid, 10, bdamage*1.4)
+				end
+			end
+		else
+			local vTable = {pCharacter, [3] = tick()}
+			table.insert(currentField[tonumber(attack)], vTable)
+			pHumanoid:TakeDamage(damage)
+			
+			local clone = hitGui:Clone()
+
+			local x = math.random(1, 5)
+			local y = math.random(1, 5)
+			local z = math.random(1, 5)
+			clone.Enabled = true
+			clone.TextLabel.Text = tostring(damage)
+			clone.StudsOffset = Vector3.new(x, y, z)
+			clone.Parent = hrp
+			delay(2, function() clone:Destroy() end)
+			burnEffect(pHumanoid, 10, bdamage)
+		end
+	end
+end
+
+
+local function testRelativeTime(player, rs, ws)
+	local value = false
+	if rs == nil or ws == nil then
+		print(rs, ws)
+		value = false
+	else
+		if not tonumber(rs) or not tonumber(ws) then
+			value = false
+		else
+			local vTableList = {}
+			local vTable = {relative_rs.Value, rs, 1}
+			local vTable2 = {relative_ws.Value, ws, 2}
+			table.insert(vTableList, 1, vTable)
+			table.insert(vTableList, 2, vTable2)
+
+			local values = {["value1"] = false, ["value2"] = false}
+
+			for i,v in ipairs(vTableList) do
+				local higher
+				local lower
+				local variable = v[3]
+
+				if v[1] >= v[2] then
+					higher = v[1]
+					lower = v[2]
+				else
+					higher = v[2]
+					lower = v[1]
+				end
+
+				if higher - lower > 3 then
+					values["value"..variable] = false
+					print("false", higher, lower, higher-lower)
+				else
+					values["value"..variable] = true
+					print("true", higher, lower, higher-lower)
+				end
+			end
+
+			if values["value1"] == true and values["value2"] == true then
+				value = true
+			end
+		end
+	end
+
+	return value
+end
+
+
+
+
+local magicModule = {}
+
+local lastUses = {["Fire Ball"] = 0, ["Fire Pillar"] = 0}
+
+magicModule["Fire Ball"] = function(a)
+	if tick() - lastUses["Fire Ball"] > 4 then
+		lastUses["Fire Ball"] = tick()
+	else
+		return
+	end
+	
+	if mCircle then
+		local execute = sounds:WaitForChild("execute"):Clone()
+		execute.Parent = mCircle
+		execute:Play()
+		
+		for i,v in pairs(mCircle:GetChildren()) do
+			if v:IsA("Decal") then
+				v.Transparency = 0
+			end
+		end
+	end
+
+	local fbClone = fireball:Clone()
+	fbClone.CFrame = mCircle.CFrame
+	fbClone.Parent = character
+	fbClone.Motor6D.Part0 = mCircle
+
+	local track = humanoid:LoadAnimation(animations["Fire Ball"])
+	track:Play()
+
+	repeat
+		fbClone.Fire.Size += 1
+		task.wait(.25)
+	until fbClone.Fire.Size >= 10
+	local newHitPos = fmf:InvokeClient(player)
+	wait(.12)
+
+	local ray = Ray.new(fbClone.Position, newHitPos - fbClone.Position)
+	local part, position = workspace:FindPartOnRayWithIgnoreList(ray, character:GetDescendants())
+
+	local distance = (position - fbClone.Position).Magnitude
+	fbClone.Motor6D:Destroy()
+	fbClone.Parent = debrisField
+	fbClone.Anchored = true
+	fbClone.Name = tostring(math.random(1, 200000))
+	
+	table.insert(currentField, tonumber(fbClone.Name), {nil})
+	
+	local tInfo = TweenInfo.new(distance*(3/100), Enum.EasingStyle.Linear)
+	local tween = game:GetService("TweenService"):Create(fbClone, tInfo, {Position = position})
+	tween:Play()
+	
+	tween.Completed:connect(function()
+		local csound1 = sounds:WaitForChild("fireSound"):Clone()
+		csound1.Parent = fbClone
+		csound1:Play()
+		
+		if mCircle then
+			for i,v in pairs(mCircle:GetChildren()) do
+				if v:IsA("Decal") then
+					v.Transparency = 1
+				end
+			end
+		end
+		
+		debris:AddItem(fbClone, 4)
+		
+		local function partTouchFunction(hit)
+			if hit ~= nil then
+				if hit.Parent == character or hit.Parent.Parent == character then
+				else
+					local magicLevel = player:FindFirstChild("playerBin"):FindFirstChild("magicLevel").Value
+					local damage = (magicLevel*2)+30
+					local bdamage = (magicLevel*2)+5
+					playerCheck(hit, fbClone.Name, damage, bdamage)
+				end
+			end
+		end
+		
+		fbClone.Touched:connect(partTouchFunction)
+		
+		local touchingParts = fbClone:GetTouchingParts()
+		
+		for i,v in pairs(touchingParts) do
+			partTouchFunction(v)
+		end
+	end)
+
+	dataStoreModule.raiseExp(player, 0, 0, 10)
+end
+
+
+magicModule["Fire Pillar"] = function()
+	if tick() - lastUses["Fire Pillar"] > 10 then
+		lastUses["Fire Pillar"] = tick()
+	else
+		return
+	end
+	
+	local clone = firepillar:Clone()
+	clone.Parent = debrisField
+	clone.Name = tostring(math.random(200001, 400000))
+	table.insert(currentField, tonumber(clone.Name), {nil})
+	local newY = humanoidRootPart.Position.Y - 2.5
+	local position = Vector3.new(humanoidRootPart.Position.X, newY, humanoidRootPart.Position.Z)
+	wait(.1)
+	local tweenInfo = TweenInfo.new(0, Enum.EasingStyle.Linear)
+	local tween = game:GetService("TweenService"):Create(clone.base, tweenInfo, {Position = position}):Play()
+	
+	local function partTouchFunction(hit)
+		if hit ~= nil then
+				local magicLevel = player:FindFirstChild("playerBin"):FindFirstChild("magicLevel").Value
+				local damage = (magicLevel*2)+60
+				local bdamage = (magicLevel*2)+30
+				playerCheck(hit, clone.Name, damage, bdamage)
+		end
+	end
+	
+	local tween2
+	
+	for i,v in pairs(clone:GetDescendants()) do
+		if v:IsA("Part") then
+			local touchingParts = v:GetTouchingParts()
+			for i,v in pairs(touchingParts) do
+				partTouchFunction(v)
+			end
+			if v.Name ~= "base" then
+				local size = 100
+				if v.Name == "exterior" then
+					size = 98
+				end
+				local tweenInfo2 = TweenInfo.new(10, Enum.EasingStyle.Linear)
+				tween2 = game:GetService("TweenService"):Create(v, tweenInfo, {Size = Vector3.new(71, size, size)})
+				tween2:Play()
+			end
+		end
+	end
+	
+	tween2.Completed:connect(function()
+		for i,v in pairs(clone:GetDescendants()) do
+			if v:IsA("Part") then
+				v.Touched:connect(partTouchFunction)
+				local touchingParts = v:GetTouchingParts()
+				for i,v in pairs(touchingParts) do
+					partTouchFunction(v)
+				end
+			end
+		end
+	end)
+end
+
+
+
+
+fmf.OnServerInvoke = function(player, a, b, c, d)
+	print(b, d)
+	if testRelativeTime(player, b, d) == true then
+		print(a, 1)
+		magicModule[a](c)
+	else
+		player:Kick("Exploit detected!")
+	end
+end
+
+
+tool.Unequipped:connect(function()
+	equipped = false
+end)

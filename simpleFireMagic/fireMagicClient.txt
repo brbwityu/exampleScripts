@@ -1,0 +1,72 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+local userInputService = game:GetService("UserInputService")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local tool = script.Parent.Parent
+
+local player = players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid
+local mouse
+
+local cooldownFolder = player:WaitForChild("cooldownFolder")
+
+local fmf = script.Parent:WaitForChild("fireMagicFunction")
+
+local relative_ws = workspace:WaitForChild("storage_ws"):WaitForChild("workspace_Values"):WaitForChild("workspace_gRvalue")
+local relative_rs = replicatedStorage:WaitForChild("storage_rs"):WaitForChild("serverTime")
+
+local equipped = false
+
+tool.Equipped:connect(function()
+	equipped = true
+	humanoid = character:FindFirstChild("Humanoid")
+	mouse = player:GetMouse()
+end)
+
+local fireModule = {["Enum.KeyCode.Q"] = "Fire Ball", ["Enum.KeyCode.R"] = "Fire Pillar",}
+
+fireModule["Fire Ball"] = function()
+	if cooldownFolder:FindFirstChild("magic1_Q") then
+		local cooldown = cooldownFolder:FindFirstChild("magic1_Q").Value
+		if tick() - cooldown > 3 then
+			local returnValue = fmf:InvokeServer("Fire Ball", relative_rs.Value, mouse.Hit.Position, relative_ws.Value)
+		end
+	end
+end
+
+fireModule["Fire Pillar"] = function()
+	if cooldownFolder:FindFirstChild("magic2_R") then
+		local cooldown = cooldownFolder:FindFirstChild("magic2_R").Value
+		if tick() - cooldown > 3 then
+			local returnValue = fmf:InvokeServer("Fire Pillar", relative_rs.Value, mouse.Hit.Position, relative_ws.Value)
+		end
+	end
+end
+
+
+
+userInputService.InputBegan:connect(function(input, gpe)
+	if equipped == true then
+		if not gpe then
+			if fireModule[tostring(input.KeyCode)] then
+				local hitKey = fireModule[tostring(input.KeyCode)]
+				fireModule[hitKey]()
+			end
+		end
+	end
+end)
+
+tool.Unequipped:connect(function()
+	equipped = false
+	
+	local animations = humanoid:GetPlayingAnimationTracks()
+	for i,v in pairs(animations) do
+		v:Stop()
+	end
+end)
+
+fmf.OnClientInvoke = function()
+	return mouse.Hit.Position
+end
