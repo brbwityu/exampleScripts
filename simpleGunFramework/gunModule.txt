@@ -1,0 +1,40 @@
+-- Scripted by brbwityu
+
+local frameworkModule = {
+	-- Gun properties go here.
+	["AK-74"] = {
+		auto = true, -- Whether gun is an auto weapon or not
+		magSize = 30,
+		shootSpeed = 180/60, -- This is how many shots per minute you wish the gun to shoot. (Excluding reloading time)
+		bulletTravelMultiplier = .2, -- This is how many seconds it takes for the bullet to travel every 100 studs
+		damagePerBullet = 45,
+		critChance = 6, -- This makes crit chance 1/6 on hit. Changing the variable will change the chance. (i.e. 7 = 1/7)
+		critMultiplier = 2.2, -- How damage multiplies on critical hit.
+		extraHeadMultiplier = 2, -- Multiplies damage based on if bullet hits head of a player.
+		reloadTime = 3.3, -- How many seconds reloads take. Should be how long animations or sounds take.
+	},
+	["MP5"] = {
+		auto = true,
+		magSize = 30,
+		shootSpeed = 300/60,
+		bulletTravelMultiplier = .25,
+		damagePerBullet = 37,
+		critChance = 6,
+		critMultiplier = 2.2,
+		extraHeadMultiplier = 2,
+		reloadTime = 3.3,
+	},
+	["Glock 18"] = {
+		auto = false,
+		magSize = 33,
+		shootSpeed = 180/60,
+		bulletTravelMultiplier = .25,
+		damagePerBullet = 37,
+		critChance = 6,
+		critMultiplier = 2.2,
+		extraHeadMultiplier = 2,
+		reloadTime = 3.3,
+	},
+}
+
+return frameworkModule

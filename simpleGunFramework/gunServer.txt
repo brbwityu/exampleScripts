@@ -1,0 +1,146 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local debris = game:GetService("Debris")
+local debrisField = workspace:WaitForChild("debrisField")
+local tweenService = game:GetService("TweenService")
+
+local storage_rs = replicatedStorage:WaitForChild("storage_rs")
+local moduleFolder = storage_rs:WaitForChild("Modules")
+
+local tool = script.Parent.Parent.Parent
+local handle = tool:WaitForChild("Handle")
+local gunStorage = script.Parent.Parent
+
+local gunScripts = script.Parent
+local gunRemotes = gunStorage:WaitForChild("gunRemotes")
+local gunAnimations = gunStorage:WaitForChild("gunAnimations")
+local gunProperties = gunStorage:WaitForChild("gunProperties")
+
+local shootSound = handle:WaitForChild("gunShoot")
+local reloadSound = handle:WaitForChild("gunReload")
+
+local shootEvent = gunRemotes:WaitForChild("shootEvent")
+local reloadEvent = gunRemotes:WaitForChild("reloadEvent")
+
+local recoilAnim = gunAnimations:WaitForChild("gunRecoil")
+local reloadAnim = gunAnimations:WaitForChild("gunReload")
+local standbyAnim = gunAnimations:WaitForChild("gunStandby")
+
+local gun_Module = require(moduleFolder:WaitForChild("gun_Module"))
+local damage = gun_Module[tool.Name]["damagePerBullet"]
+local critChance = gun_Module[tool.Name]["critChance"]
+local critMultiplier = gun_Module[tool.Name]["critMultiplier"]
+local extraHeadMultiplier = gun_Module[tool.Name]["extraHeadMultiplier"]
+local magazineCapacity = gun_Module[tool.Name]["magSize"]
+local bulletTravelMultiplier = gun_Module[tool.Name]["bulletTravelMultiplier"]
+
+local magazineValue = gunProperties:WaitForChild("magazine")
+
+local equipped = false
+
+local player
+local character
+local humanoid
+
+local function createBullet()
+	local bullet
+	local success, err = pcall(function()
+		bullet = Instance.new("Part")
+		bullet.Shape = Enum.PartType.Ball
+		bullet.Size = Vector3.new(.2, .2, .2)
+		bullet.Material = Enum.Material.Metal
+		bullet.CanCollide = false
+		bullet.Color = Color3.fromRGB(103, 79, 24)
+		bullet.Anchored = true
+		bullet.Locked = true
+		bullet.Parent = debrisField
+		debris:AddItem(bullet, 3)
+	end)
+	if err then print(err) end
+	return bullet
+end
+
+local function doDamage(a, b)
+	local success, err = pcall(function()
+		local humanoid
+		local multiplier = 1
+		if a:FindFirstChild("Humanoid") then
+			humanoid = a:FindFirstChild("Humanoid")
+			local int = math.random(1, critChance)
+			if int == critChance then
+				multiplier = multiplier + critMultiplier
+			end
+			if b == "Head" then
+				multiplier = multiplier + extraHeadMultiplier
+			end
+			local bulletDamage = damage*multiplier
+			if humanoid and humanoid ~= nil then
+				humanoid:TakeDamage(bulletDamage)
+			end
+		end
+	end)
+end
+
+local function checkPlayer(a, b)
+	local success, err = pcall(function()
+		if a.Parent:FindFirstChild("Humanoid") then
+			b:Destroy()
+			local hitCharacter = a.Parent
+			doDamage(hitCharacter, a.Name)
+		end
+	end)
+	if err then print(err) end
+end
+
+shootEvent.OnServerEvent:connect(function(a, b, c)
+	local success, err = pcall(function()
+		if magazineValue.Value >= 1 and equipped then
+			magazineValue.Value = magazineValue.Value - 1
+			local bullet = createBullet()
+			
+			local tweenCFrame = handle.Position
+			if handle:FindFirstChild("startPos") then
+				tweenCFrame = handle.startPos.Position
+			end
+			
+			bullet.CFrame = CFrame.new(tweenCFrame)
+			
+			local tweenTime = bulletTravelMultiplier*math.abs(tweenCFrame.Magnitude-b.Magnitude)/100
+			
+			tweenService:Create(bullet, TweenInfo.new(tweenTime), {CFrame = CFrame.new(b)}):Play()
+			checkPlayer(c, bullet)
+			shootSound:Play()
+			local loadedRecoilAnim = humanoid:LoadAnimation(recoilAnim)
+			loadedRecoilAnim:Play()
+		end
+	end)
+	if err then print(err) end
+end)
+
+reloadEvent.OnServerEvent:connect(function()
+	reloadSound:Play()
+	local loadedReloadAnim = humanoid:LoadAnimation(reloadAnim)
+	loadedReloadAnim:Play()
+	task.wait(reloadSound.TimeLength*.7)
+	magazineValue.Value = magazineCapacity
+end)
+
+local loadedStandbyAnim
+
+tool.Equipped:connect(function()
+	equipped = true
+	character = tool.Parent
+	player = players:GetPlayerFromCharacter(character)
+	humanoid = character:WaitForChild("Humanoid")
+	loadedStandbyAnim = humanoid:LoadAnimation(standbyAnim)
+	loadedStandbyAnim:Play()
+end)
+
+tool.Unequipped:connect(function()
+	equipped = false
+	for i,v in pairs(humanoid:GetPlayingAnimationTracks()) do
+		v:Stop()
+	end
+end)

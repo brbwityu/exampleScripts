@@ -1,0 +1,106 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local userInputService = game:GetService("UserInputService")
+local runService = game:GetService("RunService")
+
+local storage_rs = replicatedStorage:WaitForChild("storage_rs")
+local moduleFolder = storage_rs:WaitForChild("Modules")
+
+local tool = script.Parent.Parent.Parent
+local gunStorage = script.Parent.Parent
+
+local gunScripts = script.Parent
+local gunRemotes = gunStorage:WaitForChild("gunRemotes")
+local gunAnimations = gunStorage:WaitForChild("gunAnimations")
+local gunProperties = gunStorage:WaitForChild("gunProperties")
+
+local shootEvent = gunRemotes:WaitForChild("shootEvent")
+
+local gun_Module = require(moduleFolder:WaitForChild("gun_Module"))
+
+local shootSpeed = 1/gun_Module[tool.Name]["shootSpeed"]
+local reloadTime = gun_Module[tool.Name]["reloadTime"]
+local magazineCapacity = gun_Module[tool.Name]["magSize"]
+
+local magazineValue = gunProperties:WaitForChild("magazine")
+
+local lastShot = 0
+
+local player = players.LocalPlayer
+local mouse = player:GetMouse()
+local character = player.Character
+
+local humanoid = character:WaitForChild("Humanoid")
+
+local mouseHeld = false
+
+local autoPossible = gun_Module[tool.Name]["auto"]
+
+local equipped = false
+
+local technical_Hold = false
+local lastTechnical_Hold = 0
+
+local function shoot()
+	local success, err = pcall(function()
+		if magazineValue.Value >= 1 and tick() - lastShot > shootSpeed then
+			lastShot = tick()
+			--[[ 
+			Reserved for animation play.
+			]]
+			
+			local ray = Ray.new(tool.Handle.CFrame.Position, (mouse.Hit.Position - tool.Handle.CFrame.Position).Unit * 300)
+			local part, position = game.Workspace:FindPartOnRay(ray, player.Character, false, true)
+			shootEvent:FireServer(position, part)
+		end
+	end)
+end
+
+userInputService.InputBegan:connect(function(input, gpe)
+	if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 and equipped and autoPossible then
+		mouseHeld = true
+	elseif not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 and equipped and autoPossible == false then
+		shoot()
+	end
+	
+	if input.KeyCode == Enum.KeyCode.R and equipped and magazineValue.Value < magazineCapacity then
+		if technical_Hold then else
+			if tick() - lastTechnical_Hold > shootSpeed then
+				lastTechnical_Hold = tick()
+				technical_Hold = not technical_Hold
+				local reloadEvent = gunRemotes:WaitForChild("reloadEvent")
+				reloadEvent:FireServer()
+				task.wait(reloadTime)
+				technical_Hold = not technical_Hold
+			end
+		end
+	end
+end)
+
+userInputService.InputEnded:connect(function(input, gpe)
+	if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 and equipped then
+		mouseHeld = false
+	end
+end)
+
+runService.RenderStepped:connect(function()
+	if mouseHeld and autoPossible and equipped and not technical_Hold then
+		shoot()
+	end
+	-- Below is a simple function to make characters' arms visible.
+	for i,v in pairs(character:GetChildren())do
+		if string.match(v.Name, "Arm") then
+			v.LocalTransparencyModifier = 0
+		end
+	end
+end)
+
+tool.Equipped:connect(function()
+	equipped = true
+end)
+
+tool.Unequipped:connect(function()
+	equipped = false
+end)
