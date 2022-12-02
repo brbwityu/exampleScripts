@@ -1,0 +1,56 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+
+local remotes = replicatedStorage:WaitForChild("storage_rs"):WaitForChild("remotes")
+
+local tool = script.Parent
+
+local animFolder = tool:WaitForChild("Animations")
+local standby = animFolder:WaitForChild('standby')
+local punch = animFolder:WaitForChild('punch')
+
+local character
+local player
+local humanoid
+local mouse
+
+local punchEvent = remotes:WaitForChild("punchEvent")
+local serverTime = replicatedStorage:WaitForChild("storage_rs"):WaitForChild("serverTime")
+
+local lastHit = 0
+
+local equipped
+
+tool.Equipped:connect(function()
+	equipped = true
+	
+	character = tool.Parent
+	player = players:GetPlayerFromCharacter(character)
+	humanoid = character:FindFirstChild("Humanoid")
+	mouse = player:GetMouse()
+	
+	local anim = humanoid:LoadAnimation(standby)
+	anim:Play()
+	
+	mouse.Button1Down:connect(function()
+		if equipped then
+			if tick() - lastHit > .7 then
+				lastHit = tick()
+				punchEvent:FireServer(serverTime.Value, "Punch", mouse.Hit.Position)
+				print("PUNCH")
+				anim = humanoid:LoadAnimation(punch)
+				anim:Play()
+			end
+		end
+	end)
+end)
+
+tool.Unequipped:connect(function()
+	equipped = false
+	local animations = humanoid:GetPlayingAnimationTracks()
+	for i,v in pairs(animations) do
+		v:Stop()
+	end
+end)

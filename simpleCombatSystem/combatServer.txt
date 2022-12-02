@@ -1,0 +1,107 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+
+local storage_rs = replicatedStorage:WaitForChild("storage_rs")
+local serverTime = storage_rs:WaitForChild("serverTime")
+
+local dataStoreModule = require(game:GetService("ServerScriptService"):WaitForChild("serverModules"):WaitForChild("dataStoreModule"))
+
+local remotes = storage_rs:WaitForChild("remotes")
+
+local punchEvent = remotes:WaitForChild("punchEvent")
+local hitGui = script:WaitForChild("hitGui")
+
+local playerTime = {example = {"", 0}}
+
+local function damageModel(model, damage)
+	local humanoid = model:FindFirstChild("Humanoid")
+	local hrp = model:FindFirstChild("HumanoidRootPart")
+	if humanoid and humanoid.Health > 0 then
+		humanoid:TakeDamage(damage)
+	end
+	if hrp then
+		local clone = hitGui:Clone()
+		
+		local x = math.random(1, 5)
+		local y = math.random(1, 5)
+		local z = math.random(1, 5)
+		clone.TextLabel.Text = tostring(damage)
+		clone.StudsOffset = Vector3.new(x, y, z)
+		clone.Parent = hrp
+		delay(2, function() clone:Destroy() end)
+	end
+end
+
+local function punchFunction(character, cTime, duration, damage)
+	local hitTableModel = {}
+	
+	local activated = true
+	
+	local player = players:GetPlayerFromCharacter(character)
+	
+	delay(duration, function() activated = false end)
+	
+	local humanoid = character:FindFirstChild("Humanoid")
+	
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Touched:connect(function(hit)
+			if activated then
+				if not player.Backpack:FindFirstChild("Combat") then
+					if table.find(hitTableModel, hit.Parent) then
+					else
+						table.insert(hitTableModel, hit.Parent)
+						if hit.Parent:FindFirstChild("Humanoid") then
+							damageModel(hit.Parent, damage)
+						end
+					end
+				else
+					character = nil
+					return
+				end
+			else
+				character = nil
+				return
+			end
+		end)
+	end
+end
+
+punchEvent.OnServerEvent:connect(function(player, ctime, action, mPos)
+	local success = false
+	local foundCooldown = player:WaitForChild("cooldownFolder"):WaitForChild("combatCooldown").Value
+	
+	if tick() - foundCooldown > .1 and not player.Backpack:FindFirstChild("Combat") then
+		player:WaitForChild("cooldownFolder"):WaitForChild("combatCooldown").Value = tick()
+		success = true
+	end
+	
+	if success == true then
+		local higher
+		local lower
+		if serverTime.Value > ctime then
+			higher = serverTime.Value
+			lower = ctime
+		else
+			higher = ctime
+			lower = serverTime.Value
+		end
+		
+		local cTime = 0
+		
+		if higher-lower > 3 or ctime == nil or not tonumber(ctime) then
+			player:Kick()
+		else
+			cTime = tick()
+			
+			local strengthLevel = _G.sessionData["playerData"][player.UserId.."-acFunne"]["strengthLevel"]
+			
+			local damage = (strengthLevel*1.5)+27.5
+			
+			punchFunction(player.Character, cTime, .3, damage)
+			
+			dataStoreModule.raiseExp(player, 10, 15, 0)
+		end
+	end
+end)

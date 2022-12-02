@@ -1,0 +1,74 @@
+-- Scripted by brbwityu
+
+local players = game:GetService("Players")
+local dataStoreService = game:GetService("DataStoreService")
+
+local ds = dataStoreService:GetDataStore("test0417")
+
+local bin = script:WaitForChild("playerBin")
+local bin2 = script:WaitForChild("cooldownFolder")
+
+local module = {}
+
+_G.sessionData = {["playerData"] = {}}
+
+module.checkExp = function(player, statName)
+	local vTable = {"level", "strength", "magic"}
+	
+	for i,v in pairs(vTable) do
+		local statLevel = "level"
+		local expLevel
+		
+		if v ~= "level" then
+			statLevel = v.."Level"
+		end
+		expLevel = _G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"]
+		
+		local function1 = (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110)
+		local function2 = (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110+((20*.1)*_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]))
+		
+		if _G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"] >= (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110) and v ~= "level" then
+			repeat
+				_G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"] -= (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110)
+				_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel] += 1
+			until _G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"] < (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110)
+		elseif _G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"] >= (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110+((20*.1)*_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel])) and v == "level" then
+			repeat
+				_G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"] -= (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110+((20*.1)*_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]))
+				_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel] += 1
+			until _G.sessionData["playerData"][player.UserId.."-acFunne"][v.."Exp"] < (_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]*110+((20*.1)*_G.sessionData["playerData"][player.UserId.."-acFunne"][statLevel]))
+		end
+	end
+end
+
+module.raiseExp = function(player, level, strength, magic)
+	_G.sessionData["playerData"][player.UserId.."-acFunne"]["levelExp"] += level
+	_G.sessionData["playerData"][player.UserId.."-acFunne"]["strengthExp"] += strength
+	_G.sessionData["playerData"][player.UserId.."-acFunne"]["magicExp"] += magic
+	module.checkExp(player)
+end
+
+players.PlayerAdded:connect(function(player)
+	local data = ds:GetAsync(player.UserId.."-acFunne")
+	if data == nil then
+		local newTable = {["level"] = 1, ["levelExp"] = 0, ["magicLevel"] = 1, ["magicExp"] = 0, ["strengthLevel"] = 1, ["strengthExp"] = 0, ["armorMultiplier"] = 1,}
+		_G.sessionData["playerData"][player.UserId.."-acFunne"] = newTable
+		print("loadStats1")
+	else
+		_G.sessionData["playerData"][player.UserId.."-acFunne"] = data
+		print(data)
+	end
+	local clone = bin:Clone()
+	clone.Parent = player
+	
+	local clone2 = bin2:Clone()
+	clone2.Parent = player
+end)
+
+players.PlayerRemoving:connect(function(player)
+	if _G.sessionData["playerData"][player.UserId.."-acFunne"] then
+		ds:SetAsync(player.UserId.."-acFunne", _G.sessionData.playerData[player.UserId.."-acFunne"])
+	end
+end)
+
+return module
